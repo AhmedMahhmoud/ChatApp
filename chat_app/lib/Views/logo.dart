@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:chat_app/Views/Home.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -51,6 +52,39 @@ class _HomeState extends State<HomeLogo> {
   var isloading = false;
   @override
   @override
+  Future signUp() async {
+    try {
+      final UserCredential user = await _auth
+          .createUserWithEmailAndPassword(
+              email: _authmap['email'].trim(),
+              password: _authmap['password'].trim())
+          .catchError((e) {
+        if (e.toString().contains("already in use by another account"))
+          showErrorDiaglog(
+              "Register Failed", "The email address is already in use");
+        else
+          showErrorDiaglog(
+              "Register Failed", "Something went wrong please try again later");
+      });
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.user.uid)
+          .set({
+        "username": _authmap['name'].trim(),
+        "email": _authmap['email'].trim(),
+      });
+    } catch (e) {
+      print(e);
+    }
+    _auth.currentUser
+        .updateProfile(displayName: _authmap['name'].trim())
+        .then((value) => showErrorDiaglog(
+            "Congratulations", "Account is created successfully !"))
+        .catchError((e) {
+      print(e);
+    });
+  }
+
   void saveForm(String screen) async {
     print(screen);
     if (!formkey.currentState.validate()) {
@@ -59,31 +93,9 @@ class _HomeState extends State<HomeLogo> {
 
     if (screen == "REGISTER") {
       formkey.currentState.save();
+
       try {
-        final UserCredential user = await _auth
-            .createUserWithEmailAndPassword(
-                email: _authmap['email'], password: _authmap['password'])
-            .catchError((e) {
-          if (e.toString().contains("already in use by another account"))
-            showErrorDiaglog(
-                "Register Failed", "The email address is already in use");
-          else
-            showErrorDiaglog("Register Failed",
-                "Something went wrong please try again later");
-        });
-
-        await FirebaseFirestore.instance
-            .collection("users")
-            .doc(user.user.uid)
-            .set({
-          "username": _authmap["name"].trim(),
-          "email": _authmap["email"].trim()
-        });
-        _auth.currentUser.updateProfile(displayName: _authmap['name']);
-        Navigator.of(context).pop();
-
-        showErrorDiaglog(
-            "Congratulations", "Account is created successfully !");
+        signUp();
       } catch (e) {
         throw e;
       }

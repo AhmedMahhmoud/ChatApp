@@ -1,6 +1,9 @@
+import 'dart:ui';
+
 import 'package:chat_app/Views/Home.dart';
 
 import 'package:chat_app/service/FirestoreSearch.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -17,6 +20,7 @@ class ChatScreen extends StatefulWidget {
       "message": sendmessage.text,
       "sentBy": FirebaseAuth.instance.currentUser.email,
       "timestamp": DateTime.now().toString(),
+      "isliked": false,
     };
     if (sendmessage.text.isNotEmpty) {
       return searchService.addConversationMessages(roomiD, messages);
@@ -29,7 +33,7 @@ class ChatScreen extends StatefulWidget {
 
 var enteredMessage = "";
 SearchService searchService = SearchService();
-Map<String, String> messages = {};
+Map<String, dynamic> messages = {};
 TextEditingController sendmessage = new TextEditingController();
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -46,9 +50,8 @@ class _ChatScreenState extends State<ChatScreen> {
               width: 10,
             ),
             Container(
-                width: MediaQuery.of(context).size.width/5.5,
-                
-                height: MediaQuery.of(context).size.height/9.1,
+                width: MediaQuery.of(context).size.width / 5.5,
+                height: MediaQuery.of(context).size.height / 9.1,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
@@ -124,11 +127,16 @@ class _ChatScreenState extends State<ChatScreen> {
                         shrinkWrap: true,
                         itemCount: snapshot.data.docs.length,
                         itemBuilder: (context, index) {
+                          QueryDocumentSnapshot querySnapshot =
+                              snapshot.data.docs[index];
+
                           return MessageTile(
-                            snapshot.data.docs[index].data()['message'],
-                            snapshot.data.docs[index].data()["sentBy"] ==
-                                FirebaseAuth.instance.currentUser.email,
-                          );
+                              snapshot.data.docs[index].data()['message'],
+                              snapshot.data.docs[index].data()["sentBy"] ==
+                                  FirebaseAuth.instance.currentUser.email,
+                              snapshot.data.docs[index].data()["isliked"],
+                              widget.roomiD,
+                              querySnapshot.id);
                         },
                       ),
                     );
@@ -137,10 +145,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 },
               ),
               Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: 10,
-                ),
-                height: 50,
+                height: MediaQuery.of(context).size.height / 7.4,
                 child: Row(
                   children: [
                     Icon(
@@ -153,6 +158,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                     Expanded(
                       child: TextField(
+                        keyboardType: TextInputType.multiline,
+                        maxLines: null,
                         onChanged: (value) {
                           setState(() {
                             enteredMessage = value;
@@ -179,7 +186,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             hintStyle: TextStyle(
                                 color: Colors.white,
                                 fontStyle: FontStyle.italic)),
-                        style: TextStyle(color: Colors.white),
+                        style: TextStyle(color: Colors.white, fontSize: 11),
                       ),
                     ),
                     enteredMessage.trim().isEmpty
@@ -216,44 +223,88 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class MessageTile extends StatelessWidget {
+class MessageTile extends StatefulWidget {
   final String message;
   final bool isMe;
-  MessageTile(this.message, this.isMe);
+  bool isVisible = false;
+  final String roomid;
+  String querySnapshot;
+  MessageTile(
+      this.message, this.isMe, this.isVisible, this.roomid, this.querySnapshot);
+
+  @override
+  _MessageTileState createState() => _MessageTileState();
+}
+
+class _MessageTileState extends State<MessageTile> {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: isMe ? Alignment.topLeft : Alignment.topRight,
-      child: Container(
-        padding: EdgeInsets.all(15),
-        margin: EdgeInsets.only(bottom: 10, left: 5, top: 4),
-        decoration: BoxDecoration(
-            gradient: !isMe
-                ? LinearGradient(
-                    colors: [Colors.blue[700], Colors.blue[600]],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter)
-                : LinearGradient(
-                    colors: [Colors.teal, Colors.deepPurpleAccent],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter),
-            borderRadius: isMe
-                ? BorderRadius.only(
-                    bottomRight: Radius.circular(25),
-                    topLeft: Radius.circular(35),
-                    // topRight: Radius.circular(35)
-                  )
-                : BorderRadius.only(
-                    bottomLeft: Radius.circular(25),
-                    //topLeft: Radius.circular(35),
-                    topRight: Radius.circular(35)),
-            boxShadow: [
-              BoxShadow(
-                  blurRadius: 1, offset: Offset(1, 2), color: Colors.teal),
-            ]),
-        child: Text(
-          message,
-          style: TextStyle(color: Colors.white),
+      alignment: widget.isMe ? Alignment.topLeft : Alignment.topRight,
+      child: InkWell(
+        onDoubleTap: () async {
+          print(!widget.isVisible);
+          await FirebaseFirestore.instance
+              .collection("ChatRoom")
+              .doc(widget.roomid)
+              .collection("chats")
+              .doc(widget.querySnapshot)
+              .update({"isliked": !widget.isVisible}).catchError((onError) {
+            print(onError);
+          });
+        },
+        child: Stack(
+          children: [
+            Container(
+              padding: EdgeInsets.all(16),
+              margin: EdgeInsets.only(bottom: 10, left: 5, top: 4),
+              decoration: BoxDecoration(
+                  gradient: !widget.isMe
+                      ? LinearGradient(
+                          colors: [Colors.blue[700], Colors.blue[600]],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter)
+                      : LinearGradient(
+                          colors: [Colors.teal, Colors.deepPurpleAccent],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter),
+                  borderRadius: widget.isMe
+                      ? BorderRadius.only(
+                          bottomRight: Radius.circular(25),
+                          topLeft: Radius.circular(35),
+                          // topRight: Radius.circular(35)
+                        )
+                      : BorderRadius.only(
+                          bottomLeft: Radius.circular(25),
+                          //topLeft: Radius.circular(35),
+                          topRight: Radius.circular(35)),
+                  boxShadow: [
+                    BoxShadow(
+                        blurRadius: 1,
+                        offset: Offset(1, 2),
+                        color: Colors.teal),
+                  ]),
+              child: Text(
+                widget.message,
+                style: TextStyle(color: Colors.white),
+                textAlign: TextAlign.start,
+              ),
+            ),
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Visibility(
+                visible: widget.isVisible,
+                child: Container(
+                  child: Icon(
+                    Icons.favorite,
+                    color: Colors.pink,
+                    size: 20,
+                  ),
+                ),
+              ),
+            )
+          ],
         ),
       ),
     );

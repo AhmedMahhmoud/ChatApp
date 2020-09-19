@@ -22,7 +22,7 @@ startConversation(String email) {
     "timestamp": DateTime.now().toString()
   };
   searchService.creatChatRoom(
-      getchatID(email, FirebaseAuth.instance.currentUser.email), chatRoomMap);
+      getchatID(FirebaseAuth.instance.currentUser.email, email), chatRoomMap);
 }
 
 getchatID(String firstUser, String secondUser) {
@@ -122,17 +122,18 @@ class _SearchScreenState extends State<SearchScreen> {
               );
             } else {
               if (snapshot != null && searchEditingController.text.isNotEmpty)
-                return ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: snapshot.data.docs.length,
-                  itemBuilder: (context, index) {
-                    return SearchTile(
-                      username: snapshot.data.docs[index].data()['username'],
-                      email: snapshot.data.docs[index].data()['email'],
-                      userImage: snapshot.data.docs[index].data()['userImage'],
-                    );
-                  },
-                );
+               
+              return ListView.builder(
+                shrinkWrap: true,
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (context, index) {
+                  return SearchTile(
+                    username: snapshot.data.docs[index].data()['username'],
+                    emaill: snapshot.data.docs[index].data()['email'],
+                    userImage: snapshot.data.docs[index].data()['userImage'],
+                  );
+                },
+              );
             }
             return Container();
           },
@@ -141,8 +142,8 @@ class _SearchScreenState extends State<SearchScreen> {
 }
 
 class SearchTile extends StatelessWidget {
-  final String username, email, userImage;
-  SearchTile({this.username, this.email, this.userImage});
+  final String username, emaill, userImage;
+  SearchTile({this.username, this.emaill, this.userImage});
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -180,7 +181,7 @@ class SearchTile extends StatelessWidget {
                 height: 4,
               ),
               Text(
-                email,
+                emaill,
                 style: TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -191,13 +192,13 @@ class SearchTile extends StatelessWidget {
           Spacer(),
           GestureDetector(
             onTap: () async {
-              await startConversation(email);
+              await startConversation(emaill);
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ChatScreen(
                       roomiD: getchatID(
-                          email, FirebaseAuth.instance.currentUser.email),
+                        FirebaseAuth.instance.currentUser.email,emaill ),
                       chatername: username,
                       chaterImage: userImage,
                     ),

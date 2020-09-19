@@ -1,3 +1,5 @@
+import "dart:io";
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -27,8 +29,8 @@ class SearchService {
     });
   }
 
-  addConversationMessages(String roomid, messageMap) async {
-    await FirebaseFirestore.instance
+  addConversationMessages(String roomid,Map<String,dynamic> messageMap) async {
+   DocumentReference documentReference= await FirebaseFirestore.instance
         .collection("ChatRoom")
         .doc(roomid)
         .collection("chats")
@@ -90,14 +92,32 @@ class SearchService {
         .update({"backgroundImage": backgroundImage}).catchError((e) {
       print(e);
     });
-  
   }
-    updateUsername(String userid,String newname){
-   FirebaseFirestore.instance
+
+  updateUsername(String userid, String newname) {
+    FirebaseFirestore.instance
         .collection("users")
         .doc(userid)
         .update({"username": newname}).catchError((e) {
       print(e);
     });
-    }
+  }
+
+  Future<void> updateUserPicture(File myfile) async {
+    StorageReference ref = FirebaseStorage.instance
+        .ref()
+        .child("userImages")
+        .child("${FirebaseAuth.instance.currentUser.email}.jpg");
+
+    final StorageUploadTask task = ref.putFile(myfile);
+    var imageurl = await (await task.onComplete).ref.getDownloadURL();
+
+    FirebaseAuth.instance.currentUser
+        .updateProfile(photoURL: imageurl)
+        .then((value) =>
+            addUserImage(FirebaseAuth.instance.currentUser.uid, imageurl))
+        .catchError((onError) {
+      print(onError);
+    });
+  }
 }

@@ -16,8 +16,7 @@ void main() async {
 }
 
 class MyApp extends StatelessWidget {
- 
-  SearchService searchService=new SearchService();
+  SearchService searchService = new SearchService();
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -26,12 +25,14 @@ class MyApp extends StatelessWidget {
       theme:
           ThemeData(primaryColor: Color(0xff101D25), fontFamily: "Montserrat"),
       home: StreamBuilder(
-        stream: (searchService.islogedIn()),
+        stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            return Home();
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return CircularProgressIndicator();
           }
-
+          if (snapshot.hasData) {
+            return (Home());
+          }
           return HomeLogo();
         },
       ),

@@ -268,71 +268,75 @@ class RecentChatsTile extends StatelessWidget {
               padding: EdgeInsets.only(left: 10, top: 10),
               child: Column(
                 children: [
-                  Row(
-                    
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width / 5,
-                        height: MediaQuery.of(context).size.height / 12,
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            image: DecorationImage(
-                              fit: BoxFit.fill,
-                              image: NetworkImage(
-                                snapshot.data.docs[0].data()['userImage'] !=
-                                        null
-                                    ? snapshot.data.docs[0]
-                                        .data()['userImage']
-                                    : "https://cdn.iconscout.com/icon/free/png-512/flutter-2038877-1720090.png",
+                  Container(
+                    child: Row(
+                      children: [
+                        Container(
+                            width: MediaQuery.of(context).size.width / 5.5,
+                            height: MediaQuery.of(context).size.height / 12,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: DecorationImage(
+                                fit: BoxFit.fill,
+                                image:
+                                    snapshot.data.docs[0].data()['userImage'] !=
+                                            null
+                                        ? NetworkImage(snapshot.data.docs[0]
+                                            .data()['userImage'])
+                                        : AssetImage("lib/assets/f.png"),
                               ),
                             )),
-                      ),
-                      SizedBox(
-                        width: 10,
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            snapshot.data.docs[0].data()['username'],
-                            style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                fontStyle: FontStyle.italic),
-                          ),
-                          SizedBox(
-                            height: 4,
-                          ),
-                          StreamBuilder<QuerySnapshot>(
-                            builder: (context, snapshot) {
-                              if (snapshot.hasData &&
-                                  snapshot.data.docs.length > 0) {
-                                return (Text(
-                                  snapshot.data
-                                      .docs[snapshot.data.docs.length - 1]
-                                      .data()['message'],
+                        SizedBox(
+                          width: 10,
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              snapshot.data.docs[0].data()['username'],
+                              style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  fontStyle: FontStyle.italic),
+                            ),
+                            SizedBox(
+                              height: 4,
+                            ),
+                            StreamBuilder<QuerySnapshot>(
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData &&
+                                    snapshot.data.docs.length > 0) {
+                                  String messageText = snapshot
+                                      .data.docs[snapshot.data.docs.length - 1]
+                                      .data()['message'];
+                                  return Text(
+                                    messageText.length > 35
+                                        ? messageText.substring(0, 35) + ". ."
+                                        : messageText,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        fontSize: 13,
+                                        fontStyle: FontStyle.italic,
+                                        color: Colors.white.withOpacity(0.4)),
+                                  );
+                                }
+                                return Text(
+                                  "No chats here yet, Say hi .",
                                   style: TextStyle(
                                       fontSize: 13,
                                       fontStyle: FontStyle.italic,
                                       color: Colors.white.withOpacity(0.4)),
-                                ));
-                              }
-                              return Text(
-                                "No chats here yet, Say hi .",
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontStyle: FontStyle.italic,
-                                    color: Colors.white.withOpacity(0.4)),
-                              );
-                            },
-                            stream: searchService.getlast(getchatID(
-                                FirebaseAuth.instance.currentUser.email,
-                                finalString)),
-                          ),
-                        ],
-                      ),
-                    ],
+                                );
+                              },
+                              stream: searchService.getlast(getchatID(
+                                  FirebaseAuth.instance.currentUser.email,
+                                  finalString)),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   Container(
                     margin: EdgeInsets.only(top: 10),

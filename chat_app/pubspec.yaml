@@ -36,7 +36,7 @@ dependencies:
   lottie: ^0.6.0
   image_picker: ^0.6.7+7
   random_string: ^2.1.0
-  
+  firebase_messaging: ^7.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

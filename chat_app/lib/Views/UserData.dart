@@ -47,11 +47,12 @@ class _UserDataState extends State<UserData> {
     });
   }
 
-  Future getBackGroundImage() async {
-    return FirebaseFirestore.instance
-        .collection("users")
-        .doc(FirebaseAuth.instance.currentUser.uid).get();
-  }
+  // Future getBackGroundImage() async {
+  //   return FirebaseFirestore.instance
+  //       .collection("users")
+  //       .doc(FirebaseAuth.instance.currentUser.uid)
+  //       .get();
+  // }
 
   Future<void> updateUserPicture() async {
     StorageReference ref = FirebaseStorage.instance
@@ -133,30 +134,33 @@ class _UserDataState extends State<UserData> {
               child: FutureBuilder(
                   future: searchService.getUserByEmail(userMail),
                   builder: (context, snapshot) {
-                    String backgroundImage =
-                        snapshot.data.docs[0].data()['backgroundImage'];
-
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                    }
-                    if (snapshot.hasData && snapshot.data.docs.length > 0) {
+                    if (snapshot.hasData &&
+                        snapshot.data.docs.length > 0 &&
+                        snapshot.data.docs[0].data()['backgroundImage'] !=
+                            null) {
                       return Container(
                         height: MediaQuery.of(context).size.height / 2.6,
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             fit: BoxFit.cover,
                             image: AssetImage(
-                              backgroundImage.substring(
-                                  32, backgroundImage.length - 2),
+                              snapshot.data.docs[0]
+                                  .data()['backgroundImage']
+                                  .substring(
+                                      32,
+                                      snapshot.data.docs[0]
+                                              .data()['backgroundImage']
+                                              .length -
+                                          2),
                             ),
                           ),
                         ),
                       );
                     }
-
-                    return Container();
+                    return Container(
+                      height: MediaQuery.of(context).size.height / 2.6,
+                      color: Color(0xff101D25),
+                    );
                   }),
             ),
             SingleChildScrollView(
@@ -186,10 +190,8 @@ class _UserDataState extends State<UserData> {
                                   )
                                 : CircleAvatar(
                                     backgroundColor: Colors.white,
-                                    backgroundImage: NetworkImage(
-                                      "https://cdn.iconscout.com/icon/free/png-512/flutter-2038877-1720090.png",
-                                    ),
-                                  )),
+                                    backgroundImage:
+                                        AssetImage("lib/assets/f.png"))),
                   ),
                   SizedBox(
                     height: 5,
