@@ -5,10 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 
 class SearchService {
-  Future getUserByUserName(String name) async {
+  Future getUserByUserName(String phone) async {
     return await FirebaseFirestore.instance
         .collection("users")
-        .where("username", isEqualTo: name)
+        .where("phone", isEqualTo: phone)
         .get();
   }
 
@@ -16,6 +16,13 @@ class SearchService {
     return await FirebaseFirestore.instance
         .collection("users")
         .where("email", isEqualTo: email)
+        .get();
+  }
+
+  Future getUserByUserPhone(String number) async {
+    return await FirebaseFirestore.instance
+        .collection("users")
+        .where("phoneNumber", isEqualTo: number)
         .get();
   }
 
@@ -29,8 +36,24 @@ class SearchService {
     });
   }
 
-  addConversationMessages(String roomid,Map<String,dynamic> messageMap) async {
-   DocumentReference documentReference= await FirebaseFirestore.instance
+  startConversation(String email, String roomID) {
+    List<String> users = [email, FirebaseAuth.instance.currentUser.email];
+ Map<String, bool> annonymous = {
+      email: false,
+      FirebaseAuth.instance.currentUser.email: false
+    };
+    Map<String, dynamic> chatRoomMap = {
+      "users": users,
+      "chatroomid": roomID,
+      "timestamp": DateTime.now().toString(),
+      "annomynus":annonymous
+    };
+    creatChatRoom(roomID, chatRoomMap);
+  }
+
+  addConversationMessages(
+      String roomid, Map<String, dynamic> messageMap) async {
+    DocumentReference documentReference = await FirebaseFirestore.instance
         .collection("ChatRoom")
         .doc(roomid)
         .collection("chats")
@@ -49,7 +72,7 @@ class SearchService {
         .collection("ChatRoom")
         .doc(roomid)
         .collection("chats")
-        .orderBy("timestamp")
+        .orderBy("timestamp", descending: true)
         .snapshots();
   }
 
@@ -77,6 +100,10 @@ class SearchService {
         .update({"timestamp": DateTime.now().toString()});
   }
 
+  Future getAllChats() async {
+    return await FirebaseFirestore.instance.collection("users").get();
+  }
+
   Future<void> addUserImage(String userid, String userImage) async {
     await FirebaseFirestore.instance.collection("users").doc(userid).update(
       {"userImage": userImage},
@@ -95,10 +122,9 @@ class SearchService {
   }
 
   updateUsername(String userid, String newname) {
-    FirebaseFirestore.instance
-        .collection("users")
-        .doc(userid)
-        .update({"username": newname}).catchError((e) {
+    FirebaseFirestore.instance.collection("users").doc(userid).update({
+      "username": newname,
+    }).catchError((e) {
       print(e);
     });
   }

@@ -179,8 +179,8 @@ class _UserDataState extends State<UserData> {
                         : Container(
                             margin: EdgeInsets.only(
                                 top: MediaQuery.of(context).size.height * 0.12),
-                            width: MediaQuery.of(context).size.width / 2.4,
-                            height: MediaQuery.of(context).size.height / 3.9,
+                            width: MediaQuery.of(context).size.width / 2,
+                            height: MediaQuery.of(context).size.height / 4,
                             child: imageUrl != null
                                 ? CircleAvatar(
                                     backgroundColor: Colors.white,
@@ -197,7 +197,7 @@ class _UserDataState extends State<UserData> {
                     height: 5,
                   ),
                   Container(
-                    height: MediaQuery.of(context).size.height / 6.3,
+                    height: MediaQuery.of(context).size.height / 6.7,
                     child: Card(
                       color: Colors.white,
                       shadowColor: Colors.blue[600],
@@ -275,13 +275,15 @@ class _UserDataState extends State<UserData> {
                             SizedBox(
                               width: 10,
                             ),
-                            Text(
-                              userMail,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                letterSpacing: 1,
-                                color: Color(0xff101D25),
+                            Expanded(
+                              child: Text(
+                                userMail,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  letterSpacing: 1,
+                                  color: Color(0xff101D25),
+                                ),
                               ),
                             )
                           ],

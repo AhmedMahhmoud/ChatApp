@@ -1,10 +1,13 @@
+import 'package:chat_app/Views/AnnomnusChat.dart';
 import 'package:chat_app/Views/UserData.dart';
+import 'package:chat_app/Views/logo.dart';
 import 'package:chat_app/Views/search_screen.dart';
 import 'package:chat_app/service/FirestoreSearch.dart';
-import 'package:chat_app/widgets/chatscreen.dart';
+import 'package:chat_app/Views/chatscreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import 'package:lottie/lottie.dart';
 
 class Home extends StatefulWidget {
@@ -90,34 +93,6 @@ class _UserDataState extends State<Home> with SingleTickerProviderStateMixin {
             ],
           ),
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: DropdownButton(
-              icon: Icon(Icons.more_vert, color: Colors.white),
-              items: [
-                DropdownMenuItem(
-                    value: "Logout",
-                    child: Container(
-                      child: Row(
-                        children: [
-                          Icon(Icons.exit_to_app),
-                          SizedBox(
-                            width: 8,
-                          ),
-                          Text("Logout")
-                        ],
-                      ),
-                    ))
-              ],
-              onChanged: (value) {
-                if (value == "Logout") {
-                  FirebaseAuth.instance.signOut();
-                }
-              },
-            ),
-          )
-        ],
       ),
       backgroundColor: Color(0xff101D25),
       body: Stack(
@@ -206,14 +181,28 @@ class _UserDataState extends State<Home> with SingleTickerProviderStateMixin {
                 SizedBox(height: 10),
                 InkWell(
                   onTap: () {
-                    print(FirebaseAuth.instance.currentUser.photoURL);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AnnomnusChat(),
+                        ));
                   },
                   child: Text("Chat Anonymously ",
                       style: TextStyle(color: Colors.white, fontSize: 22)),
                 ),
                 SizedBox(height: 10),
-                Text("Log Out",
-                    style: TextStyle(color: Colors.white, fontSize: 22)),
+                InkWell(
+                  onTap: () async {
+                    FirebaseAuth.instance.signOut();
+                    Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => HomeLogo(),
+                        ));
+                  },
+                  child: Text("Log Out",
+                      style: TextStyle(color: Colors.white, fontSize: 22)),
+                ),
                 SizedBox(height: 10),
                 // Text("Branches",
                 //     style: TextStyle(color: Colors.white, fontSize: 22)),
@@ -259,9 +248,11 @@ class RecentChatsTile extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ChatScreen(
-                        roomiD: getchatID(firstemail, finalString),
-                        chatername: snapshot.data.docs[0].data()['username'],
-                        chaterImage: snapshot.data.docs[0].data()['userImage']),
+                      roomiD: getchatID(firstemail, finalString),
+                      chatername: snapshot.data.docs[0].data()['username'],
+                      chaterImage: snapshot.data.docs[0].data()['userImage'],
+                      annomynus: true,
+                    ),
                   ));
             },
             child: Container(
@@ -278,12 +269,12 @@ class RecentChatsTile extends StatelessWidget {
                               shape: BoxShape.circle,
                               image: DecorationImage(
                                 fit: BoxFit.fill,
-                                image:
-                                    snapshot.data.docs[0].data()['userImage'] !=
-                                            null
-                                        ? NetworkImage(snapshot.data.docs[0]
-                                            .data()['userImage'])
-                                        : AssetImage("lib/assets/f.png"),
+                                image: snapshot.data.docs[0]
+                                            .data()['userImage'] !=
+                                        null
+                                    ? NetworkImage(snapshot.data.docs[0]
+                                        .data()['userImage'])
+                                    : AssetImage("lib/assets/f.png"),
                               ),
                             )),
                         SizedBox(
@@ -303,24 +294,50 @@ class RecentChatsTile extends StatelessWidget {
                             SizedBox(
                               height: 4,
                             ),
-                            StreamBuilder<QuerySnapshot>(
+                            StreamBuilder(
                               builder: (context, snapshot) {
-                                if (snapshot.hasData &&
-                                    snapshot.data.docs.length > 0) {
-                                  String messageText = snapshot
-                                      .data.docs[snapshot.data.docs.length - 1]
-                                      .data()['message'];
-                                  return Text(
-                                    messageText.length > 35
-                                        ? messageText.substring(0, 35) + ". ."
-                                        : messageText,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                        fontSize: 13,
-                                        fontStyle: FontStyle.italic,
-                                        color: Colors.white.withOpacity(0.4)),
-                                  );
+                                try {
+                                  if (snapshot.data == null) {
+                                    return CircularProgressIndicator();
+                                  }
+
+                                  if (snapshot
+                                              .data
+                                              .docs[
+                                                  snapshot.data.docs.length - 1]
+                                              .data()['type'] ==
+                                          "image" &&
+                                      snapshot.hasData &&
+                                      snapshot.data.docs.length > 0) {
+                                    return Text(
+                                      "Sent a photo",
+                                      style: TextStyle(color: Colors.white),
+                                    );
+                                  } else if (snapshot.hasData &&
+                                      snapshot.data.docs.length > 0) {
+                                    String messageText = snapshot.data
+                                        .docs[snapshot.data.docs.length - 1]
+                                        .data()['message'];
+                                    int width =
+                                        (MediaQuery.of(context).size.width ~/
+                                                12)
+                                            .toInt();
+                                    return Text(
+                                      messageText.length > 35
+                                          ? messageText.substring(0, width) +
+                                              ". ."
+                                          : messageText,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          fontStyle: FontStyle.italic,
+                                          color: Colors.white.withOpacity(0.4)),
+                                    );
+                                  }
+                                } catch (e) {
+                                  print(e);
                                 }
+
                                 return Text(
                                   "No chats here yet, Say hi .",
                                   style: TextStyle(

@@ -6,6 +6,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../widgets/clipper.dart';
 
@@ -15,6 +16,7 @@ class HomeLogo extends StatefulWidget {
 
 class _HomeState extends State<HomeLogo> {
   final GlobalKey<ScaffoldState> _scaffoldKey = new GlobalKey<ScaffoldState>();
+  GoogleSignIn googleSignIn = new GoogleSignIn();
   @override
   void initState() {
     // TODO: implement initState
@@ -26,6 +28,7 @@ class _HomeState extends State<HomeLogo> {
     'email': "",
     'password': "",
     'name': "",
+    "phone": ""
   };
   void showErrorDiaglog(String title, String message) {
     showDialog(
@@ -45,10 +48,7 @@ class _HomeState extends State<HomeLogo> {
   }
 
   final _auth = FirebaseAuth.instance;
-  String _email;
-  String _password;
-  String _displayName;
-  bool _obsecure = false;
+
   var isloading = false;
   @override
   @override
@@ -72,10 +72,12 @@ class _HomeState extends State<HomeLogo> {
           .set({
         "username": _authmap['name'].trim(),
         "email": _authmap['email'].trim(),
+        "phone": _authmap['phone'].trim(),
       });
     } catch (e) {
       print(e);
     }
+
     _auth.currentUser
         .updateProfile(displayName: _authmap['name'].trim())
         .then((value) => showErrorDiaglog(
@@ -94,11 +96,8 @@ class _HomeState extends State<HomeLogo> {
     if (screen == "REGISTER") {
       formkey.currentState.save();
 
-      try {
-        signUp();
-      } catch (e) {
-        throw e;
-      }
+      await signUp();
+      showErrorDiaglog("Congratulations", "Account is created successfully !");
 
       // await widget.auth.SignUp(_authmap['email'], _authmap['password']);
     } else if (screen == "LOGIN") {
@@ -122,8 +121,6 @@ class _HomeState extends State<HomeLogo> {
             'Could not authenticate you. Please try again later.';
         return showErrorDiaglog("Error occured", errorMessage);
       }
-
-      // await widget.auth.SignIn(_authmap['email'], _authmap['password']);
     }
   }
 
@@ -212,7 +209,8 @@ class _HomeState extends State<HomeLogo> {
     }
 
     //input widget
-    Widget _input(Icon icon, String hint, bool obsecure) {
+    Widget _input(
+        Icon icon, String hint, bool obsecure, TextInputType textInputType) {
       return Container(
         padding: EdgeInsets.only(left: 10, right: 10),
         child: TextFormField(
@@ -223,6 +221,8 @@ class _HomeState extends State<HomeLogo> {
               _authmap['password'] = newValue.trim();
             } else if (hint == "DISPLAY NAME") {
               _authmap["name"] = newValue.trim();
+            } else if (hint == "PHONE NUMBER") {
+              _authmap["phone"] = newValue.trim();
             }
           },
           validator: (value) {
@@ -240,6 +240,13 @@ class _HomeState extends State<HomeLogo> {
               if (value.length < 4) {
                 return "Password is too short ";
               }
+            } else if (hint == "PHONE NUMBER") {
+              if (value.isEmpty) {
+                return "Phone is required";
+              }
+              if (value.length < 11 || value[0] != '0') {
+                return "Please enter a valid number";
+              }
             } else {
               if (value.isEmpty) {
                 return "Enter a username";
@@ -247,6 +254,7 @@ class _HomeState extends State<HomeLogo> {
             }
           },
           obscureText: obsecure,
+          keyboardType: textInputType,
           style: TextStyle(
             fontSize: 15,
             fontFamily: "Montserrat",
@@ -309,7 +317,7 @@ class _HomeState extends State<HomeLogo> {
     void _loginSheet() {
       _scaffoldKey.currentState.showBottomSheet<void>((BuildContext context) {
         return DecoratedBox(
-          decoration: BoxDecoration(color: Colors.teal),
+          decoration: BoxDecoration(color: Color(0xff101D25)),
           child: ClipRRect(
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(40.0),
@@ -338,7 +346,7 @@ class _HomeState extends State<HomeLogo> {
                           children: <Widget>[
                             Center(
                               child: CircleAvatar(
-                                backgroundColor: Colors.teal,
+                                backgroundColor: Color(0xff101D25),
                                 radius: 70,
                                 child: Text(
                                   "L",
@@ -359,7 +367,8 @@ class _HomeState extends State<HomeLogo> {
                                   ),
                                   "EMAIL",
                                   // _emailController,
-                                  false),
+                                  false,
+                                  TextInputType.emailAddress),
                             ),
                             Padding(
                               padding: EdgeInsets.only(bottom: 20),
@@ -369,7 +378,8 @@ class _HomeState extends State<HomeLogo> {
                                     size: 25,
                                   ),
                                   "PASSWORD",
-                                  true),
+                                  true,
+                                  TextInputType.multiline),
                             ),
                             SizedBox(
                               height: 20,
@@ -412,7 +422,7 @@ class _HomeState extends State<HomeLogo> {
     void _registerSheet() {
       _scaffoldKey.currentState.showBottomSheet<void>((BuildContext context) {
         return DecoratedBox(
-          decoration: BoxDecoration(color: Theme.of(context).canvasColor),
+          decoration: BoxDecoration(color: Color(0xff101D25)),
           child: ClipRRect(
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(40.0),
@@ -442,7 +452,7 @@ class _HomeState extends State<HomeLogo> {
                         child: Column(children: <Widget>[
                           Center(
                             child: CircleAvatar(
-                              backgroundColor: Colors.teal,
+                              backgroundColor: Color(0xff101D25),
                               radius: 70,
                               child: Text(
                                 "R",
@@ -460,17 +470,24 @@ class _HomeState extends State<HomeLogo> {
                               top: 60,
                             ),
                             child: _input(Icon(Icons.account_circle),
-                                "DISPLAY NAME", false),
+                                "DISPLAY NAME", false, TextInputType.name),
                           ),
                           Padding(
                             padding: EdgeInsets.only(
                               bottom: 20,
                             ),
-                            child: _input(Icon(Icons.email), "EMAIL", false),
+                            child: _input(Icon(Icons.email), "EMAIL", false,
+                                TextInputType.emailAddress),
                           ),
                           Padding(
                             padding: EdgeInsets.only(bottom: 20),
-                            child: _input(Icon(Icons.lock), "PASSWORD", true),
+                            child: _input(Icon(Icons.lock), "PASSWORD", true,
+                                TextInputType.multiline),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.only(bottom: 20),
+                            child: _input(Icon(Icons.phone), "PHONE NUMBER",
+                                false, TextInputType.number),
                           ),
                           Padding(
                             padding: EdgeInsets.only(
@@ -506,7 +523,7 @@ class _HomeState extends State<HomeLogo> {
 
     return Scaffold(
         key: _scaffoldKey,
-        backgroundColor: Colors.teal[700],
+        backgroundColor: Color(0xff101D25),
         body: Container(
           child: Column(
             children: <Widget>[
@@ -544,6 +561,61 @@ class _HomeState extends State<HomeLogo> {
                 ),
                 padding: EdgeInsets.only(top: 10, left: 20, right: 20),
               ),
+              SizedBox(
+                height: 20,
+              ),
+              Center(
+                child: GestureDetector(
+                  onTap: () async {
+                    await googleSignIn
+                        .signIn()
+                        .catchError((onError) {
+                          print(onError);
+                        })
+                        .then(
+                          (value) => value.authentication.then(
+                            (googleKey) => FirebaseAuth.instance
+                                .signInWithCredential(
+                              GoogleAuthProvider.credential(
+                                  idToken: googleKey.idToken,
+                                  accessToken: googleKey.accessToken),
+                            )
+                                .then((value)async {
+                                  await FirebaseFirestore.instance.collection("users").doc(value.user.uid).set({
+                                    "email":value.user.email,
+                                    "userImage": value.user.photoURL,
+                                    "username":value.user.displayName});})
+
+                                 
+                                
+                                .then((signedUser) {
+                              Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => Home(),
+                                  ));
+                            }).catchError((onError) {
+                              print(onError);
+                            }),
+                          ),
+                        )
+                        .catchError((onError) {
+                          print(onError);
+                        });
+                  },
+                  child: Container(
+                    padding: EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.rectangle,
+                      color: Colors.red,
+                    ),
+                    child: Text(
+                      "Sign in with google",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ),
               Expanded(
                 child: Align(
                   child: ClipPath(
@@ -555,7 +627,7 @@ class _HomeState extends State<HomeLogo> {
                   ),
                   alignment: Alignment.bottomCenter,
                 ),
-              )
+              ),
             ],
             crossAxisAlignment: CrossAxisAlignment.stretch,
           ),

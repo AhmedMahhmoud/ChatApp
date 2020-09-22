@@ -1,5 +1,5 @@
 import 'package:chat_app/service/FirestoreSearch.dart';
-import 'package:chat_app/widgets/chatscreen.dart';
+import 'package:chat_app/Views/chatscreen.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,16 +14,6 @@ class SearchScreen extends StatefulWidget {
 
 SearchService searchService = new SearchService();
 TextEditingController searchEditingController = TextEditingController();
-startConversation(String email) {
-  List<String> users = [email, FirebaseAuth.instance.currentUser.email];
-  Map<String, dynamic> chatRoomMap = {
-    "users": users,
-    "chatroomid": getchatID(email, FirebaseAuth.instance.currentUser.email),
-    "timestamp": DateTime.now().toString()
-  };
-  searchService.creatChatRoom(
-      getchatID(FirebaseAuth.instance.currentUser.email, email), chatRoomMap);
-}
 
 getchatID(String firstUser, String secondUser) {
   if (firstUser.substring(0, 1).codeUnitAt(0) >
@@ -88,7 +78,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                   letterSpacing: 2,
                                   fontSize: 15,
                                   fontStyle: FontStyle.italic),
-                              hintText: "Search by username")),
+                              hintText: "Search by phone number")),
                     ),
                   ),
                   Padding(
@@ -122,18 +112,17 @@ class _SearchScreenState extends State<SearchScreen> {
               );
             } else {
               if (snapshot != null && searchEditingController.text.isNotEmpty)
-               
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: snapshot.data.docs.length,
-                itemBuilder: (context, index) {
-                  return SearchTile(
-                    username: snapshot.data.docs[index].data()['username'],
-                    emaill: snapshot.data.docs[index].data()['email'],
-                    userImage: snapshot.data.docs[index].data()['userImage'],
-                  );
-                },
-              );
+                return ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: snapshot.data.docs.length,
+                  itemBuilder: (context, index) {
+                    return SearchTile(
+                      username: snapshot.data.docs[index].data()['username'],
+                      emaill: snapshot.data.docs[index].data()['email'],
+                      userImage: snapshot.data.docs[index].data()['userImage'],
+                    );
+                  },
+                );
             }
             return Container();
           },
@@ -192,15 +181,17 @@ class SearchTile extends StatelessWidget {
           Spacer(),
           GestureDetector(
             onTap: () async {
-              await startConversation(emaill);
+              await searchService.startConversation(emaill,
+                  getchatID(FirebaseAuth.instance.currentUser.email, emaill));
               Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (context) => ChatScreen(
                       roomiD: getchatID(
-                        FirebaseAuth.instance.currentUser.email,emaill ),
+                          FirebaseAuth.instance.currentUser.email, emaill),
                       chatername: username,
                       chaterImage: userImage,
+                      annomynus: true,
                     ),
                   ));
             },

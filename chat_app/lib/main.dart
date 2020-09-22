@@ -1,6 +1,5 @@
 import 'package:chat_app/Views/Home.dart';
-import 'package:chat_app/Views/UserData.dart';
-import 'package:chat_app/Views/drawer.dart';
+
 import 'package:chat_app/service/FirestoreSearch.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
